@@ -1,0 +1,28 @@
+cradle:
+  stack:
+    - path: "bench-tool/src"
+      component: "bench-tool:lib"
+
+    - path: "bench-tool/app/Main.hs"
+      component: "bench-tool:exe:bench-tool-exe"
+
+    - path: "bench-tool/app/Paths_bench_tool.hs"
+      component: "bench-tool:exe:bench-tool-exe"
+
+    - path: "http2-client-grpc/src"
+      component: "http2-client-grpc:lib"
+
+    - path: "http2-client-grpc/test"
+      component: "http2-client-grpc:test:http2-client-grpc-test"
+
+    - path: "http2-grpc-proto-lens/src"
+      component: "http2-grpc-proto-lens:lib"
+
+    - path: "http2-grpc-proto3-wire/src"
+      component: "http2-grpc-proto3-wire:lib"
+
+    - path: "http2-grpc-types/src"
+      component: "http2-grpc-types:lib"
+
+    - path: "warp-grpc/src"
+      component: "warp-grpc:lib"

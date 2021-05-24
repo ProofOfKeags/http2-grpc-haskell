@@ -2,3 +2,4 @@ dist/
 stack*.yaml.lock
 .stack-work/
 *~
+.vscode/
