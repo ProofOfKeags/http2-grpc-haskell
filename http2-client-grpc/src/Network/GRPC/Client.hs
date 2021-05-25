@@ -4,6 +4,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
 
 {- | A module adding support for gRPC over HTTP2.
@@ -90,10 +91,13 @@ import Control.Concurrent.Async.Lifted (
  )
 import Control.Exception (
     Exception (..),
+    SomeAsyncException,
     SomeException,
+    handle,
     throwIO,
  )
 import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Trans.Except
 import Data.Binary.Builder (toLazyByteString)
 import Data.Binary.Get (
     Decoder (..),
@@ -266,14 +270,14 @@ streamReply ::
     i ->
     -- | A state-passing handler that is called with the message read.
     (a -> HeaderList -> o -> ClientIO a) ->
-    RPCCall r (a, HeaderList, HeaderList, IO (Either ClientError ()))
+    RPCCall r (a, HeaderList, HeaderList)
 streamReply rpc v0 req handler =
     RPCCall rpc $ \conn stream isfc osfc encoding decoding ->
         let loop v1 decode hdrs =
                 _waitEvent stream >>= \case
                     StreamPushPromiseEvent {} ->
                         lift $ throwIO UnallowedPushPromiseReceived
-                    StreamHeadersEvent _ trls -> return (v1, hdrs, trls, runClientIO (_rst stream Cancel))
+                    StreamHeadersEvent _ trls -> return (v1, hdrs, trls)
                     StreamErrorEvent _ _ ->
                         lift $ throwIO (InvalidState "stream error")
                     StreamDataEvent _ dat -> do
@@ -281,7 +285,7 @@ streamReply rpc v0 req handler =
                         _ <- liftIO $ _consumeCredit isfc (ByteString.length dat)
                         _ <- _updateWindow isfc
                         handleAllChunks decoding v1 hdrs decode dat loop
-         in do
+         in mapExceptT (handle @SomeAsyncException (\e -> runClientIO (_rst stream Cancel) *> throwIO e)) $ do
                 let ocfc = _outgoingFlowControl conn
                 let decompress = _getDecodingCompression decoding
                 sendSingleMessage

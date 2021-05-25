@@ -186,7 +186,7 @@ rawStreamServer ::
     -- | A state-passing handler called for each server-sent output.
     -- Headers are repeated for convenience but are the same for every iteration.
     (a -> HeaderList -> o -> ClientIO a) ->
-    ClientIO (Either TooMuchConcurrency (a, HeaderList, HeaderList, IO (Either ClientError ())))
+    ClientIO (Either TooMuchConcurrency (a, HeaderList, HeaderList))
 rawStreamServer rpc (GrpcClient client authority headers timeout compression _) v0 input handler =
     let call = streamReply rpc v0 input handler
      in open client authority headers (Just timeout) (Encoding compression) (Decoding compression) call
